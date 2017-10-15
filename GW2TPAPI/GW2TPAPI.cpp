@@ -18,8 +18,8 @@
 using namespace std;
 #pragma comment(lib,"ws2_32.lib")
 #define ITEM_COUNT 24465
-#define SELLQ_Limit 550
-#define BUYQ_Limit 550
+int SELLQ_Limit=550;
+int BUYQ_Limit=550;
 
 char buffer[10000];
 string website_HTML;
@@ -146,6 +146,12 @@ int main(void) {
 					}
 				}
 				else cout << " Select favourites first!" << endl;
+			}
+			if (user_in == "4")
+			{
+				cout << "Current MIN Limits : BUYING QUANTITY " << BUYQ_Limit << " SELLING QUANTITY " << SELLQ_Limit << endl;
+				cout << "Input new limits and separate them with space" << endl;
+				cin >> BUYQ_Limit >> SELLQ_Limit;
 			}
 			cout << " [1] LIST [2] LIVE UPDATE FAV [3] SELECT FAVOURITES [4] CHANGE SELL QUANTITY LIMITS [5] REBUILD DATABASE [esc] QUIT" << endl;
 			cin >> user_in;
