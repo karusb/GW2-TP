@@ -29,7 +29,6 @@ char *APIHc;
 string website_HTML;
 string stringresponse;
 
-const string API_Link = "api.guildwars2.com/v2"; // ADD all links in a class?
 string APIH = "Authorization: Bearer ";
 //****************************************************
 // Functions
