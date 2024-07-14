@@ -19,6 +19,7 @@
 using namespace std;
 bool HttpGet(const std::string& url, std::string& response);
 Item ParseJSON_ITEM(int id);
+std::vector<ItemNameExtended> ParseJSON_ITEMNames(const std::vector<Item>& items);
 bool InitJSON_ITEMSDB(Item *items, int *itemslist, int itempos);
 string ParseJSON_ITEMName(int it);
 void InitItemsListDB(string itemdbname);
@@ -134,6 +135,18 @@ void SortProfitableItems()
 	std::sort(favitems.begin(), favitems.end());
 }
 
+ItemNameExtended ExtendItem(const Item& item)
+{
+	ItemNameExtended extendedItem(item, ParseJSON_ITEMName(item.getid()));
+	return extendedItem;
+}
+
+void PreloadItemNames(const std::vector<Item>& source, std::vector<ItemNameExtended>& to, int count)
+{
+	std::vector<Item> trimmedsource = {source.begin(), source.begin() + count};
+	to = (ParseJSON_ITEMNames(trimmedsource));
+}
+
 void PrintItem(int number, const Item& item, std::string_view name)
 {
 	cout << "[ " << number << " ]" << name << " Profit : " << item.profit << endl
@@ -191,8 +204,13 @@ int main(int argc, const char* argv[])
 
 			SortProfitableItems();
 
-			for (int i = 0; i < parsesize && i < favitems.size(); i++)
-				PrintItemWithFetch(i, favitems[i]);
+			std::vector<ItemNameExtended> focusitems;
+			cout << "Loading item names...";
+			PreloadItemNames(favitems, focusitems, parsesize);
+			cout << "Done";
+
+			for (int i = 0; i < parsesize && i < focusitems.size(); i++)
+				PrintExtendedItem(i, focusitems[i]);
 
 			cout << " TYPE u to UPDATE FETCHED LIST or any key to continue" << endl;
 			cin >> user_in;
@@ -201,12 +219,12 @@ int main(int argc, const char* argv[])
 				while (user_in != "esc")
 				{
 					for (int i = 0; i < parsesize; i++)
-						favitems[i] = ParseJSON_ITEM(favitems[i].getid());
+						focusitems[i] = focusitems[i], ParseJSON_ITEM(focusitems[i].getid());
 					
-					std::sort(favitems.begin(), favitems.end());
+					std::sort(focusitems.begin(), focusitems.end());
 
-					for (int i = 0; i < parsesize; i++)
-						PrintItemWithFetch(i, favitems[i]);
+					for (int i = 0; i < parsesize && i < focusitems.size(); i++)
+						PrintExtendedItem(i, focusitems[i]);
 
 					cout << "Press any key then enter to continue or type esc to stop" << endl;
 					cin >> user_in;
@@ -314,6 +332,28 @@ string ParseJSON_ITEMName(int it)
 	return ParseJSON(&stringresponse, "name");
 }
 
+std::vector<ItemNameExtended> ParseJSON_ITEMNames(const std::vector<Item>& items)
+{
+	string fixlink = "https://api.guildwars2.com/v2/items?ids=";
+	for (auto& item : items)
+	{
+		fixlink.append(to_string(item.getid()));
+		fixlink.append(",");
+	}
+	stringresponse = "";
+	HttpGet(fixlink, stringresponse);
+
+	std::vector<ItemNameExtended> extendedItems;
+	std::string previousName = "?";
+	for (auto i = 0; i < items.size(); ++i)
+	{
+		ItemNameExtended extendedItem(items[i], ParseJSON(&stringresponse, "name", previousName));
+		previousName = extendedItem.getname();
+		extendedItems.push_back(extendedItem);
+	}
+	return extendedItems;
+}
+
 Item ParseJSON_ITEM(int it)
 {
 	string fixlink = "https://api.guildwars2.com/v2/commerce/prices/";
@@ -345,7 +385,7 @@ bool InitJSON_ITEMSDB(Item *items, int *itemslist, int itempos)
 	string requestitemid;
 	string currID = "?", bcurrID = "?";
 	string id, buy_quantity, sell_quantity, buy_price, sell_price;
-	// STR to CHAR
+
 	for (int i = 0 + itempos; i < ITEM_REQ_COUNT + itempos && i < ITEM_COUNT; i++)
 	{
 		fixlink.append(to_string(itemslist[i]));
