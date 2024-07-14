@@ -12,11 +12,11 @@ public:
 	~Item() = default;
 
 	Item& operator=(const Item &a);
-	int buyquantity();
-	int sellquantity();
-	int sellprice();
-	int buyprice();
-	int getid();
+	int buyquantity() const;
+	int sellquantity() const;
+	int sellprice() const;
+	int buyprice() const;
+	int getid() const;
 	int profit;
 
 	friend std::ostream& operator<< (std::ostream& output, const Item &i) 
@@ -42,5 +42,18 @@ public:
 
 protected:
 	int sell_quantity, buy_quantity, sell_price, buy_price, id;
+};
+
+class ItemNameExtended
+	: public Item
+{
+public:
+	ItemNameExtended(const Item& item, const std::string& name);
+	ItemNameExtended(int ids = 0, int buyprice = 0, int buyquantity = 0, int sellprice = 0 , int sellquantity = 0, const std::string& name="");
+
+	const std::string_view getname() const;
+
+private:
+	std::string name;
 };
 #endif

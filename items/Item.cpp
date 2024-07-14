@@ -21,8 +21,22 @@ Item& Item::operator= (const Item &a)
 	
 	return (*this);
 }
-int Item::buyquantity() {return buy_quantity; }
-int Item::sellquantity() { return sell_quantity; }
-int Item::sellprice() {return sell_price; }
-int Item::buyprice() { return buy_price; }
-int Item::getid() { return id; }
+int Item::buyquantity() const {return buy_quantity; }
+int Item::sellquantity() const { return sell_quantity; }
+int Item::sellprice() const {return sell_price; }
+int Item::buyprice() const { return buy_price; }
+int Item::getid() const { return id; }
+
+ItemNameExtended::ItemNameExtended(const Item& item, const std::string& name)
+	: Item(item)
+	, name(name)
+{}
+ItemNameExtended::ItemNameExtended(int ids, int buyprice, int buyquantity, int sellprice, int sellquantity, const std::string& name)
+	: Item(ids, buyprice, buyquantity, sellprice, sellquantity)
+	, name(name)
+{}
+
+const std::string_view ItemNameExtended::getname() const
+{
+	return name;
+}

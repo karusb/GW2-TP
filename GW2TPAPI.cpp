@@ -13,50 +13,41 @@
 #include "items/Item.hpp"
 #include "items/Database.hpp"
 #include "items/JsonHelper.hpp"
+#include <chrono>
+#include <thread>
 
 using namespace std;
-
+bool HttpGet(const std::string& url, std::string& response);
 Item ParseJSON_ITEM(int id);
-void InitJSON_ITEMSDB(Item *items, int *itemslist, int itempos);
+bool InitJSON_ITEMSDB(Item *items, int *itemslist, int itempos);
 string ParseJSON_ITEMName(int it);
 void InitItemsListDB(string itemdbname);
 
 namespace
 {
 	int ITEM_COUNT = 27480;
-	int ITEM_REQ_COUNT = 100;
+	int ITEM_REQ_COUNT = 180;
 	int SELLQ_Limit = 550;
 	int BUYQ_Limit = 550;
 	int BUYG_MIN = 0;
 	int BUYG_MAX = 9999999;
-
-	char *APIHc;
+	int *itemslist;
+	Item items[30000];
+	std::vector<Item> favitems;
 	string stringresponse;
 	string APIH = "Authorization: Bearer ";
-
-	HTTPClientCurl httpClient;
 }
 
-int main(int argc, const char* argv[])
+bool HttpGet(const std::string& url, std::string& response)
 {
-	// Variables
-	int requestitem = 0;
-	int user_choice[20], user_choice_count = 0;
-	int favj = 0;
-	bool favselect = false;
-	Item items[30000];
-	Item favitems[10000];
-	Item user_favitems[50];
-	int *itemslist;
-	ofstream itemsout;
-	ofstream itemtpout;
-	ifstream APIin;
-	ifstream filecheck;
-	string user_in = "0";
-	
-	APIHc = new char[APIH.length() + 1];
-	strcpy(APIHc, APIH.c_str());
+	HTTPClientCurl httpClient;
+	httpClient.AddHeader("Host: api.guildwars2.com");
+	return httpClient.Get(url, response);
+}
 
+bool LoadItemsList()
+{
+	ifstream filecheck;
 	// LOAD THE LIST OF ITEMS TO BE FETCHED
 	filecheck.open("items.list");
 	if (filecheck.is_open())
@@ -65,18 +56,23 @@ int main(int argc, const char* argv[])
 		ITEM_COUNT = itemdbintegrity("items.list") - 1;
 		itemslist = new int[ITEM_COUNT];
 		itemlistload("items.list", itemslist, ITEM_COUNT, ::InitItemsListDB);
+		return true;
 	}
-	else
-	{
-		filecheck.close();
-		cout << "Item list cannot be found, rebuilding..." << endl;
-		InitItemsListDB("items.list");
-		ITEM_COUNT = itemdbintegrity("items.list") - 1;
-		itemslist = new int[ITEM_COUNT];
-		itemlistload("items.list", itemslist, ITEM_COUNT, ::InitItemsListDB);
-	}
+	return false;
+}
 
-	cout << "Currently " << ITEM_COUNT << " can be sold or bought from TP" << endl;
+void RebuildItemsList()
+{
+	InitItemsListDB("items.list");
+	ITEM_COUNT = itemdbintegrity("items.list") - 1;
+	itemslist = new int[ITEM_COUNT];
+	itemlistload("items.list", itemslist, ITEM_COUNT, ::InitItemsListDB);
+}
+
+bool LoadItemPriceDatabase()
+{
+	ifstream filecheck;
+
 	filecheck.open("items.db");
 	if (filecheck.is_open())
 	{
@@ -88,31 +84,100 @@ int main(int argc, const char* argv[])
 			cout << itemdbintegrity("items.db") << " : Your item database is outdated please rebuild DB" << endl;
 	}
 	else
+		return false;
+	return true;
+}
+
+void RebuildItemPriceDatabase()
+{
+	ofstream itemsout;
+	// REBUILD DATABASE ALGO
+	for (int i = 0; i < ITEM_COUNT; i += ITEM_REQ_COUNT)
+	{
+		if (!InitJSON_ITEMSDB(items, itemslist, i))
+			{
+				cout << "|" << flush;
+				std::this_thread::sleep_for(std::chrono::milliseconds(20000));
+				if (!InitJSON_ITEMSDB(items, itemslist, i))
+				{
+					cout << "1 retry wasn't enough at " << i << flush;
+					throw;
+				}
+			}
+		if (i % 600 == 0)
+			cout << "=" << flush;
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
+	cout << " Download Complete..." << endl;
+	itemsout.open("items.db");
+	for (int i = 0; i < ITEM_COUNT; i++)
+	{
+		itemsout << items[i] << endl;
+	}
+	itemsout.close();
+	cout << " Database saved successfully..." << endl;
+	// REBUILD DATABASE ALGO
+	if (itemdbintegrity("items.db") == ITEM_COUNT)
+		cout << "INTEGRITY CHECK PASSED" << endl;
+	else
+		cout << itemdbintegrity("items.db") << " : Your item database may not be correct please rebuild DB" << endl;
+
+	std::sort(items, items + ITEM_COUNT);
+}
+
+void SortProfitableItems()
+{
+	for (int i = 0; i < ITEM_COUNT; i++)
+		if (items[i].buyquantity() >= BUYQ_Limit && items[i].sellquantity() >= SELLQ_Limit && items[i].buyprice() <= BUYG_MAX && items[i].buyprice() >= BUYG_MIN)
+			favitems.push_back(items[i]);
+
+	std::sort(favitems.begin(), favitems.end());
+}
+
+void PrintItem(int number, const Item& item, std::string_view name)
+{
+	cout << "[ " << number << " ]" << name << " Profit : " << item.profit << endl
+			<< " Buy Quantity : " << item.buyquantity() << " Sell Quantity : " << item.sellquantity() << endl
+			<< " Buy Price : " << item.buyprice() << " Sell Price : " << item.sellprice() << endl << endl;
+}
+
+void PrintItemWithFetch(int number, const Item& item)
+{
+	PrintItem(number, item, ParseJSON_ITEMName(item.getid()));
+}
+
+void PrintExtendedItem(int number, const ItemNameExtended& item)
+{
+	PrintItem(number, item, item.getname());
+}
+
+int main(int argc, const char* argv[])
+{
+	// Variables
+	int requestitem = 0;
+	int user_choice[20], user_choice_count = 0;
+	bool favselect = false;
+	Item user_favitems[50];
+
+	ofstream itemsout;
+	ofstream itemtpout;
+	string user_in = "0";
+
+	if (!LoadItemsList())
+	{
+		cout << "Item list cannot be found, rebuilding..." << endl;
+		RebuildItemsList();
+	}
+
+	cout << "Currently " << ITEM_COUNT << " items can be sold or bought from TP" << endl;
+
+	if (!LoadItemPriceDatabase())
 	{
 		cout << "Item Price Database was not found! Rebuilding database, this may take a while..." << endl;
-		// REBUILD DATABASE ALGO
-		for (int i = 0; i < ITEM_COUNT; i += ITEM_REQ_COUNT)
-		{
-			InitJSON_ITEMSDB(items, itemslist, i);
-			if (i % 600 == 0)
-				cout << "=" << flush;
-		}
-		cout << " Download Complete..." << endl;
-		itemsout.open("items.db");
-		for (int i = 0; i < ITEM_COUNT; i++)
-		{
-			itemsout << items[i] << endl;
-		}
-		itemsout.close();
-		cout << " Database saved successfully..." << endl;
-		// REBUILD DATABASE ALGO
-		if (itemdbintegrity("items.db") == ITEM_COUNT)
-			cout << "INTEGRITY CHECK PASSED" << endl;
-		else
-			cout << itemdbintegrity("items.db") << " : Your item database may not be correct please rebuild DB" << endl;
+		RebuildItemPriceDatabase();
 	}
+
 	// UI BEGIN
-	std::sort(items, items + ITEM_COUNT);
 
 	cout << " [1] LIST [2] LIVE UPDATE FAV [3] SELECT FAVOURITES [4] CHANGE LIMITS [5] REBUILD DATABASE [esc] QUIT" << endl;
 	cin >> user_in;
@@ -123,18 +188,12 @@ int main(int argc, const char* argv[])
 			cout << "How many items to show? ";
 			cin >> user_in;
 			int parsesize = stoi(user_in);
-			for (int i = 0; i < ITEM_COUNT; i++)
-			{
-				if (items[i].buyquantity() >= BUYQ_Limit && items[i].sellquantity() >= SELLQ_Limit && items[i].buyprice() <= BUYG_MAX && items[i].buyprice() >= BUYG_MIN)
-				{
-					favitems[favj] = items[i];
-					favj += 1;
-				}
-			}
-			for (int i = 0; i < parsesize && i < favj; i++)
-				cout << "[ " << i << " ]" << ParseJSON_ITEMName(favitems[i].getid()) << " Profit : " << favitems[i].profit << endl
-					 << " Buy Quantity : " << favitems[i].buyquantity() << " Sell Quantity : " << favitems[i].sellquantity() << endl
-					 << " Buy Price : " << favitems[i].buyprice() << " Sell Price : " << favitems[i].sellprice() << endl;
+
+			SortProfitableItems();
+
+			for (int i = 0; i < parsesize && i < favitems.size(); i++)
+				PrintItemWithFetch(i, favitems[i]);
+
 			cout << " TYPE u to UPDATE FETCHED LIST or any key to continue" << endl;
 			cin >> user_in;
 			if (user_in == "u" || user_in == "U")
@@ -142,14 +201,12 @@ int main(int argc, const char* argv[])
 				while (user_in != "esc")
 				{
 					for (int i = 0; i < parsesize; i++)
-					{
 						favitems[i] = ParseJSON_ITEM(favitems[i].getid());
-					}
-					std::sort(favitems, favitems + favj);
+					
+					std::sort(favitems.begin(), favitems.end());
+
 					for (int i = 0; i < parsesize; i++)
-						cout << "[ " << i << " ]" << ParseJSON_ITEMName(favitems[i].getid()) << " Profit : " << favitems[i].profit << endl
-							 << " Buy Quantity : " << favitems[i].buyquantity() << " Sell Quantity : " << favitems[i].sellquantity() << endl
-							 << " Buy Price : " << favitems[i].buyprice() << " Sell Price : " << favitems[i].sellprice() << endl;
+						PrintItemWithFetch(i, favitems[i]);
 
 					cout << "Press any key then enter to continue or type esc to stop" << endl;
 					cin >> user_in;
@@ -199,10 +256,10 @@ int main(int argc, const char* argv[])
 						user_favitems[i] = ParseJSON_ITEM(stoi(favstreaminS));
 					}
 					std::sort(user_favitems, user_favitems + user_choice_count);
+
 					for (int i = 0; i < user_choice_count; i++)
-						cout << "[ " << i << " ]" << ParseJSON_ITEMName(user_favitems[i].getid()) << " Profit : " << user_favitems[i].profit << endl
-							 << " Buy Quantity : " << user_favitems[i].buyquantity() << " Sell Quantity : " << user_favitems[i].sellquantity() << endl
-							 << " Buy Price : " << user_favitems[i].buyprice() << " Sell Price : " << user_favitems[i].sellprice() << endl;
+						PrintItemWithFetch(i, user_favitems[i]);
+
 					favouriteinstream.seekg(0);
 
 					cout << "Press any key then enter to continue or type esc to stop" << endl;
@@ -234,32 +291,10 @@ int main(int argc, const char* argv[])
 		if (user_in == "5")
 		{
 			cout << "Downloading tradable item list... " << endl;
-			InitItemsListDB("items.list");
-			ITEM_COUNT = itemdbintegrity("items.list") - 1;
-			itemslist = new int[ITEM_COUNT];
-			itemlistload("items.list", itemslist, ITEM_COUNT, ::InitItemsListDB);
+			RebuildItemsList();
+			
 			cout << "Downloading item prices... " << endl;
-			// REBUILD DATABASE ALGO
-			for (int i = 0; i < ITEM_COUNT; i += ITEM_REQ_COUNT)
-			{
-				InitJSON_ITEMSDB(items, itemslist, i);
-				if (i % 600 == 0)
-					cout << "=" << flush;
-			}
-			cout << " Download Complete..." << endl;
-			itemsout.open("items.db");
-			for (int i = 0; i < ITEM_COUNT; i++)
-			{
-				itemsout << items[i] << endl;
-			}
-			itemsout.close();
-			cout << " Database saved successfully..." << endl;
-			// REBUILD DATABASE ALGO
-			if (itemdbintegrity("items.db") == ITEM_COUNT)
-				cout << "INTEGRITY CHECK PASSED" << endl;
-			else
-				cout << itemdbintegrity("items.db") << " : Your item database may not be correct please rebuild DB" << endl;
-			std::sort(items, items + ITEM_COUNT);
+			RebuildItemPriceDatabase();
 		}
 
 		cout << " [1] LIST [2] LIVE UPDATE FAV [3] SELECT FAVOURITES [4] CHANGE LIMITS [5] REBUILD DATABASE [esc] QUIT" << endl;
@@ -274,10 +309,8 @@ string ParseJSON_ITEMName(int it)
 	string fixlink = "https://api.guildwars2.com/v2/items/";
 	string requestitemid = to_string(it);
 	fixlink.append(requestitemid);
-	char *newfixlink = new char[fixlink.length() + 1];
-	strcpy(newfixlink, fixlink.c_str());
 	stringresponse = "";
-	httpClient.Get(newfixlink, stringresponse);
+	HttpGet(fixlink, stringresponse);
 	return ParseJSON(&stringresponse, "name");
 }
 
@@ -288,11 +321,9 @@ Item ParseJSON_ITEM(int it)
 	string id, buy_quantity, sell_quantity, buy_price, sell_price;
 
 	fixlink.append(requestitemid);
-	char *newfixlink = new char[fixlink.length() + 1];
-	strcpy(newfixlink, fixlink.c_str());
 	// MAKE THE CONNECTION
 	stringresponse = "";
-	httpClient.Get(newfixlink, stringresponse);
+	HttpGet(fixlink, stringresponse);
 
 	// PARSE RESPONSE
 	id = ParseJSON(&stringresponse, "id");
@@ -308,7 +339,7 @@ Item ParseJSON_ITEM(int it)
 	return anitem;
 }
 
-void InitJSON_ITEMSDB(Item *items, int *itemslist, int itempos)
+bool InitJSON_ITEMSDB(Item *items, int *itemslist, int itempos)
 {
 	string fixlink = "https://api.guildwars2.com/v2/commerce/prices?ids=";
 	string requestitemid;
@@ -320,12 +351,9 @@ void InitJSON_ITEMSDB(Item *items, int *itemslist, int itempos)
 		fixlink.append(to_string(itemslist[i]));
 		fixlink.append(",");
 	}
-
-	char *newfixlink = new char[fixlink.length() + 1];
-	strcpy(newfixlink, fixlink.c_str());
 	// MAKE THE CONNECTION
 	stringresponse = "";
-	httpClient.Get(newfixlink, stringresponse);
+	HttpGet(fixlink, stringresponse);
 
 	// PARSE RESPONSE
 	for (int i = 0 + itempos; i < ITEM_REQ_COUNT + itempos && i < ITEM_COUNT; i++)
@@ -340,16 +368,18 @@ void InitJSON_ITEMSDB(Item *items, int *itemslist, int itempos)
 		sell_quantity = ParseJSON(&stringresponse, "quantity", "sells", currID);
 		sell_price = ParseJSON(&stringresponse, "unit_price", "sells", currID);
 		bcurrID = currID;
-
+		if (id == "nan")
+			return false;
 		Item anitem(stoi(id), stoi(buy_price), stoi(buy_quantity), stoi(sell_price), stoi(sell_quantity));
 		items[i] = anitem;
 	}
+	return true;
 }
 
 void InitItemsListDB(string itemdbname)
 {
 	ofstream Fitemslist;
-	httpClient.Get("https://api.guildwars2.com/v2/commerce/prices", stringresponse);
+	HttpGet("https://api.guildwars2.com/v2/commerce/prices", stringresponse);
 	Fitemslist.open(itemdbname);
 	Fitemslist.seekp(0);
 	for (int i = 0; i < stringresponse.length(); i++)

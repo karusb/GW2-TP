@@ -26,7 +26,7 @@ include(FetchContent)
 FetchContent_Declare(
   CurlWrapper
   GIT_REPOSITORY https://github.com/karusb/CurlWrapper.git
-  GIT_TAG        ffb6db7664f34dc12e9892948024a48c7562ddf1
+  GIT_TAG        59814511b63330ae8b10da193a24fbb8d1eb6f34
 )
 
 FetchContent_MakeAvailable(CurlWrapper)
