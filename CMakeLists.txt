@@ -53,7 +53,11 @@ enable_testing()
 set(GW2-TPPath ${CMAKE_CURRENT_LIST_DIR})
 
 add_executable (GW2-TP
- "GW2TPAPI.cpp"
+ "Main.cpp"
+ "items/App.cpp"
+ "items/App.hpp"
+ "items/Api.cpp"
+ "items/Api.hpp"
  "items/Item.cpp"
  "items/Item.hpp"
  "items/Database.cpp"

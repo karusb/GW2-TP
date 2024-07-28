@@ -32,3 +32,10 @@ int getstringinputsizeJSON(std::string *inputfile, std::string tobefound, std::s
 
 */
 int getstringinputpositionJSON(std::string *inputfile, std::string tobefound, std::string tobefoundwithin = "?", std::string tobefoundwithinfirst = "?");
+
+bool IsMarkedForRemoval(char c);
+
+std::string FromToken(const std::string& key, const std::string& value, std::size_t offset = 0);
+std::string ToToken(const std::string& key, const std::string& value, std::size_t offset = 0);
+std::string StringValue(const std::string& value);
+std::string Value(const std::string& value);

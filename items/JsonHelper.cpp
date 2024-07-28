@@ -94,3 +94,43 @@ int getstringinputpositionJSON(std::string *inputfile, std::string tobefound, st
 
 	return datastartpos + 2;
 }
+
+bool IsMarkedForRemoval(char c)
+{
+    switch(c)
+    {
+    case '[':
+    case ' ':
+    case ']':
+    case ',':
+        return true;
+    default:
+        return false;
+    }
+}
+
+std::string FromToken(const std::string& key, const std::string& value, std::size_t offset)
+{
+	if (const auto& loc = value.find(key); loc != std::string::npos)
+		return value.substr(value.find(key) + offset);
+	else 
+		return {};
+}
+
+std::string ToToken(const std::string& key, const std::string& value, std::size_t offset)
+{
+	if (const auto& loc = value.find(key); loc != std::string::npos)
+		return value.substr(0, value.find(key) + offset);
+	else 
+		return {};
+}
+
+std::string StringValue(const std::string& value) 
+{ 
+	return ToToken(",", FromToken(":", value, 2), -1);
+}
+
+std::string Value(const std::string& value) 
+{
+	return ToToken(",", FromToken(":", value, 1));
+}
