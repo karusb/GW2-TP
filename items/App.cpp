@@ -1,5 +1,6 @@
 #include "App.hpp"
 #include <algorithm>
+#include "termcolor/termcolor.hpp"
 
 GW2TPAPP::GW2TPAPP(GW2API& api, IdDatabase& idDb, NameDatabase& nameDb, PriceDatabase& priceDb, FavouritesDatabase& favDb)
     : api(api)
@@ -9,21 +10,59 @@ GW2TPAPP::GW2TPAPP(GW2API& api, IdDatabase& idDb, NameDatabase& nameDb, PriceDat
     , favDb(favDb)
 {}
 
-void GW2TPAPP::Printer::PrintItem(int number, const Item& item, std::string_view name)
+GW2TPAPP::~GW2TPAPP()
 {
-	std::cout << "[ " << number << " ]" << name << " Profit : " << item.profit << std::endl
-			<< " Buy Quantity : " << item.buyquantity() << " Sell Quantity : " << item.sellquantity() << std::endl
-			<< " Buy Price : " << item.buyprice() << " Sell Price : " << item.sellprice() << std::endl << std::endl;
+    std::cout << termcolor::reset;
 }
 
-void GW2TPAPP::Printer::PrintItemWithFetch(int number, const Item& item, GW2API& api)
+void GW2TPAPP::Printer::EncodeRarity(Rarity rarity)
 {
-	PrintItem(number, item, api.PullItemDetails(item.getid()));
+    if (rarity == Rarity::Basic)
+        std::cout << termcolor::grey;
+    else if (rarity == Rarity::Fine)
+        std::cout << termcolor::blue;
+    else if (rarity == Rarity::Masterwork)
+        std::cout << termcolor::green;
+    else if (rarity == Rarity::Rare)
+        std::cout << termcolor::bright_yellow;
+    else if (rarity == Rarity::Exotic)
+        std::cout << termcolor::yellow;
+    else if (rarity == Rarity::Ascended)
+        std::cout << termcolor::magenta;
+    else if (rarity == Rarity::Legendary)
+        std::cout << termcolor::bright_magenta;
 }
 
-void GW2TPAPP::Printer::PrintExtendedItem(int number, const ItemNameExtended& item)
+void GW2TPAPP::Printer::PrintItem(int number, const Item& item, std::string_view name, Rarity rarity, bool shortList)
 {
-	PrintItem(number, item, item.getname());
+	std::cout << "[ " << number << " ] ";
+    EncodeRarity(rarity);
+    std::cout << name  << termcolor::reset << std::endl
+            << termcolor::bright_green << " Profit : " << item.profit << termcolor::reset
+            << termcolor::bright_red << " Fees before profit : " << item.fees << termcolor::reset << std::endl;
+
+    if (!shortList)
+    {
+	    std::cout << " Buy Quantity : " << item.buyquantity() << " Buy Price : " << item.buyprice() << std::endl 
+            << " Sell Quantity : " << item.sellquantity() << " Sell Price : " << item.sellprice() << std::endl << std::endl;
+    }
+            // << " BUY: Quantity  Price   |  SELL: Quantity  Price" << termcolor::reset << std::endl
+            // << termcolor::green << "       " << item.buyquantity() << "    " << item.buyprice() << termcolor::reset << "         "
+            // << termcolor::red << "       " <<  item.sellquantity() << "    " << item.sellprice() << termcolor::reset << std::endl;
+
+			// << " Buy Quantity : " << item.buyquantity() << " Sell Quantity : " << item.sellquantity() << std::endl
+			// << " Buy Price : " << item.buyprice() << " Sell Price : " << item.sellprice() << std::endl << std::endl;
+}
+
+void GW2TPAPP::Printer::PrintItemWithFetch(int number, const Item& item, GW2API& api, bool shortList)
+{
+    auto details = api.PullItemDetails(item.getid());
+	PrintItem(number, item, details.first, ItemNameExtended::RarityStringToEnum(details.second), shortList);
+}
+
+void GW2TPAPP::Printer::PrintExtendedItem(int number, const ItemNameExtended& item, bool shortList)
+{
+	PrintItem(number, item, item.getname(), item.getrarity(), shortList);
 }
 
 void GW2TPAPP::UserInitialize()
@@ -78,7 +117,7 @@ void GW2TPAPP::DatabaseMenuPrint()
 
 void GW2TPAPP::DatabaseMenu()
 {
-	std::cout << "!!! INFORMATION !!! Make sure to rebuild all databases on major updates" << std::endl;
+	std::cout << termcolor::yellow << "!!! INFORMATION !!! Make sure to rebuild all databases on major updates" << termcolor::reset << std::endl;
 	DatabaseMenuPrint();
 
 	std::string input;
@@ -132,9 +171,9 @@ void GW2TPAPP::RebuildExtendedItemsList()
 void GW2TPAPP::DbIntegrityNotify()
 {
 	if (DatabaseIntegrityChecker::CheckLines("items.db") - 1 == idDb.Get().size())
-		std::cout << "INTEGRITY CHECK PASSED" << std::endl;
+		std::cout  << termcolor::bright_green << "INTEGRITY CHECK PASSED" << termcolor::reset << std::endl;
 	else
-		std::cout << DatabaseIntegrityChecker::CheckLines("items.db") - 1 << " != " << idDb.Get().size() << "Actual vs Expected INCONSISTENCY : Please rebuild all databases" << std::endl;
+		std::cout << termcolor::bright_red << DatabaseIntegrityChecker::CheckLines("items.db") - 1 << " != " << idDb.Get().size() << "Actual vs Expected INCONSISTENCY : Please rebuild all databases" << termcolor::reset << std::endl;
 }
 
 void GW2TPAPP::RebuildItemPriceDatabase()
@@ -180,7 +219,7 @@ void GW2TPAPP::LiveListMenu()
     std::cout << "Done" << std::endl;
 
     for (int i = 0; i < parsesize && i < extendedItems.size(); i++)
-        Printer::PrintExtendedItem(i, extendedItems[i]);
+        Printer::PrintExtendedItem(i, extendedItems[i], shortList);
 
     std::cout << " TYPE u to UPDATE FETCHED LIST or any key to continue" << std::endl;
     std::cin >> input;
@@ -194,7 +233,7 @@ void GW2TPAPP::LiveListMenu()
             std::sort(extendedItems.begin(), extendedItems.end());
 
             for (int i = 0; i < parsesize && i < extendedItems.size(); i++)
-                Printer::PrintExtendedItem(i, extendedItems[i]);
+                Printer::PrintExtendedItem(i, extendedItems[i], shortList);
 
             std::cout << "Press any key then enter to continue or type esc to stop" << std::endl;
             std::cin >> input;
@@ -214,7 +253,7 @@ void GW2TPAPP::OfflineListMenu()
     for (int i = 0; i < parsesize && i < sortedItems.size(); i++)
     {	
         auto item = nameDb.ExtendItemFromDB(sortedItems[i]);
-        Printer::PrintExtendedItem(i, item);
+        Printer::PrintExtendedItem(i, item, shortList);
     }
 }
 
@@ -232,7 +271,7 @@ void GW2TPAPP::LiveFavouritesMenu()
             std::sort(userFavourites.begin(), userFavourites.end());
 
             for (int i = 0; i < favDb.Get().size(); i++)
-                Printer::PrintItemWithFetch(i, userFavourites[i], api);
+                Printer::PrintItemWithFetch(i, userFavourites[i], api, shortList);
 
             std::cout << "Press any key then enter to continue or type q to stop" << std::endl;
             std::cin >> input;
@@ -273,10 +312,14 @@ void GW2TPAPP::MainMenu()
 {
     std::string input = "0";
 
-    std::cout << " [1] LIVE LIST [2] LIVE FAVOURITES [3] OFFLINE LIST [4] SELECT FAVOURITES [5] CHANGE LIMITS [6] DATABASE [q] QUIT" << std::endl;
-	std::cin >> input;
 	while (input != "q")
 	{
+        std::cout << termcolor::bright_blue 
+        <<" [1] LIVE [2] FAVOURITES [3] OFFLINE [4] SELECT FAVOURITES [5] LIMITS [6] DATABASE " << termcolor::reset << std::endl
+        << termcolor::magenta << " [s] SHORTEN(" << shortList << ")" << termcolor::reset
+        << termcolor::red << " [q] QUIT" << termcolor::reset <<  std::endl;
+
+        std::cin >> input;
 		if (input == "1")
             LiveListMenu();
 		else if (input == "2")
@@ -289,8 +332,8 @@ void GW2TPAPP::MainMenu()
             LimitsMenu();
 		else if (input == "6")
 			DatabaseMenu();
-
-		std::cout << " [1] LIVE LIST [2] LIVE FAVOURITES [3] OFFLINE LIST [4] SELECT FAVOURITES [5] CHANGE LIMITS [6] DATABASE [q] QUIT" << std::endl;
-		std::cin >> input;
+        else if (input == "s")
+            shortList = !shortList;
+        std::cout << termcolor::reset;
 	};
 }

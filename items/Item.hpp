@@ -18,6 +18,7 @@ public:
 	std::uint64_t sellprice() const;
 	std::uint64_t buyprice() const;
 	std::uint64_t getid() const;
+	std::int64_t fees;
 	std::int64_t profit;
 
 	friend std::ostream& operator<< (std::ostream& output, const Item &i) 
@@ -45,12 +46,8 @@ public:
 			return input;
 		input >> profitt >> buypricet >> buyquantityt >> sellpricet >> sellquantityt;
 
-		i.id = std::stoull(idt);
-		i.profit = std::stoll(profitt);
-		i.buy_price = std::stoull(buypricet);
-		i.buy_quantity = std::stoull(buyquantityt);
-		i.sell_price = std::stoull(sellpricet);
-		i.sell_quantity = std::stoull(sellquantityt);
+		i = Item(std::stoull(idt), std::stoll(profitt), std::stoull(buypricet), std::stoull(buyquantityt), std::stoull(sellpricet), std::stoull(sellquantityt));
+
 		return (input);
 	}
 
@@ -73,18 +70,31 @@ public:
 protected:
 	std::uint64_t sell_quantity, buy_quantity, sell_price, buy_price, id;
 };
+enum Rarity
+	: std::uint64_t
+{
+	Junk = 0,
+	Basic = 1,
+	Fine = 2,
+	Masterwork = 3,
+	Rare = 4,
+	Exotic = 5,
+	Ascended = 6,
+	Legendary = 7
+};
+
 struct ItemIdentifier
 {
 	std::uint64_t id;
 	std::string name;
-
+	Rarity rarity;
 	friend bool operator!= (ItemIdentifier const &a, ItemIdentifier const &b)
 	{
 		return !(a.id == b.id && a.name == b.name);
 	}
 	friend std::ostream& operator<< (std::ostream& output, const ItemIdentifier &i) 
 	{
-		return (output << i.id <<" " << i.name);
+		return (output << i.id <<" " << static_cast<typename std::underlying_type<Rarity>::type>(i.rarity) << " " << i.name);
 	}
 	friend std::ostream& operator<< (std::ostream& output, const std::vector<ItemIdentifier> &v) 
 	{
@@ -95,10 +105,12 @@ struct ItemIdentifier
 	friend std::istream& operator>> (std::istream& input, ItemIdentifier &i)
 	{
 		std::string idt;
-		input >> idt;
+		std::uint64_t irarity;
+		input >> idt >> irarity;
 		if (idt.empty())
 			return input;
 		i.id = std::stoull(idt);
+		i.rarity = static_cast<Rarity>(irarity);
 		return std::getline(input, i.name);
 	}
 	friend std::istream& operator>> (std::istream& input, std::vector<ItemIdentifier> &v)
@@ -115,13 +127,17 @@ class ItemNameExtended
 	: public Item
 {
 public:
-	ItemNameExtended(const Item& item, std::string name);
+	ItemNameExtended(const Item& item, std::string name, Rarity rarity);
+	ItemNameExtended(const Item& item, std::string name, std::string rarity);
 	ItemNameExtended(std::uint64_t ids = 0, std::uint64_t buyprice = 0, std::uint64_t buyquantity = 0, std::uint64_t sellprice = 0 , std::uint64_t sellquantity = 0, const std::string& name="");
 	ItemNameExtended(ItemIdentifier identifier, std::uint64_t buyprice, std::uint64_t buyquantity, std::uint64_t sellprice, std::uint64_t sellquantity);
 
 	const std::string_view getname() const;
-
+	Rarity getrarity() const;
+	static Rarity RarityStringToEnum(std::string_view rarity);
 private:
+
 	std::string name;
+	Rarity rarity = Rarity::Junk;
 };
 #endif

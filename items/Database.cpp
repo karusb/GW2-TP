@@ -71,10 +71,10 @@ ItemNameExtended NameDatabase::ExtendItemFromDB(const Item& item)
 {
 	for (const auto& exitem : storage)
 		if (exitem.id == item.getid())
-			return {item, exitem.name};
+			return {item, exitem.name, exitem.rarity};
 	std::string unknownItemName = "Unknown Item ID ";
 	unknownItemName.append(std::to_string(item.getid()));
-	return {item, unknownItemName};
+	return {item, unknownItemName, Rarity::Junk};
 }
 
 IdDatabase::IdDatabase(std::string filename)

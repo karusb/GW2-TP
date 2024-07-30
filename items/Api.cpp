@@ -27,19 +27,20 @@ void GW2API::PreloadItemNames(const std::vector<Item>& source, std::vector<ItemN
 	to = PullItemNames(trimmedsource);
 }
 
-std::string GW2API::PullItemDetails(std::uint64_t it)
+std::pair<std::string,std::string> GW2API::PullItemDetails(std::uint64_t it)
 {
 	std::string fixlink = "https://api.guildwars2.com/v2/items/";
 	std::string requestitemid = std::to_string(it);
 	fixlink.append(requestitemid);
 	std::string stringresponse = "";
 	HttpGet(fixlink, stringresponse);
-	return ParseJSON(&stringresponse, "name");
+	return std::make_pair(ParseJSON(&stringresponse, "name"), ParseJSON(&stringresponse, "rarity"));
 }
 
 ItemNameExtended GW2API::ExtendItem(const Item& item)
 {
-	ItemNameExtended extendedItem(item, PullItemDetails(item.getid()));
+	auto pair = PullItemDetails(item.getid());
+	ItemNameExtended extendedItem(item, pair.first, pair.second);
 	return extendedItem;
 }
 
@@ -59,7 +60,7 @@ std::vector<ItemNameExtended> GW2API::PullItemNames(const std::vector<Item>& ite
 	std::string previousName = "?";
 	for (auto i = 0; i < items.size(); ++i)
 	{
-		ItemNameExtended extendedItem(items[i], ParseJSON(&stringresponse, "name", previousName));
+		ItemNameExtended extendedItem(items[i], ParseJSON(&stringresponse, "name", previousName), ParseJSON(&stringresponse, "rarity", previousName));
 		previousName = extendedItem.getname();
 		extendedItems.push_back(extendedItem);
 	}
@@ -159,9 +160,10 @@ std::vector<ItemIdentifier> GW2API::PullItemNames(const std::vector<std::uint64_
 	{
 		std::string idKey = key;
 		auto id = Value(FromToken(idKey, response)).substr(1);
+		auto rarity = ToToken(",", FromToken("\"rarity\":", response, 10), 0);
 		response = response.substr(response.find(idKey.append(id)) + idKey.size());
 
-		ItemIdentifier itemIdentifier{std::stoull(id), name};
+		ItemIdentifier itemIdentifier{std::stoull(id), name, ItemNameExtended::RarityStringToEnum(rarity)};
 		itemIdentifiers.push_back(itemIdentifier);
 
 		auto details = FromToken("\"details\": {", ToToken("}", response));

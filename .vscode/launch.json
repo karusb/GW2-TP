@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/out/build/linux-debug/GW2-TP.exe",
-            "args": ["-r", "karusb/BazPO"],
+            "args": [],
             "environment": [{ "name": "config", "value": "Debug" }],
             "cwd": "${workspaceFolder}"
         },
@@ -18,7 +18,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/out/build/x64-debug/GW2-TP.exe",
-            "args": ["-r", "karusb/BazPO"],
+            "args": [],
             "environment": [{ "name": "config", "value": "Debug" }],
             "cwd": "${workspaceFolder}"
         }

@@ -21,7 +21,7 @@ public:
     void InitExtendedItemsListDB();
     void InitItemPriceDatabase();
     void InitItemsListDB();
-    std::string PullItemDetails(std::uint64_t it);
+    std::pair<std::string,std::string> PullItemDetails(std::uint64_t it);
     Item PullItemPrice(std::uint64_t it);
 
 private:
