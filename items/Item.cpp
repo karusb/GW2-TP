@@ -48,6 +48,12 @@ ItemNameExtended::ItemNameExtended(ItemIdentifier identifier, std::uint64_t buyp
 	, name(identifier.name)
 {}
 
+ItemNameExtended::ItemNameExtended(const Item& item, const ItemIdentifier& identifier)
+	: Item(item)
+	, name(identifier.name)
+	, rarity(identifier.rarity)
+{}
+
 const std::string_view ItemNameExtended::getname() const
 {
 	return name;

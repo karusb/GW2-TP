@@ -5,10 +5,17 @@
 #include "Item.hpp"
 #include "Database.hpp"
 
+struct SortParameters
+{
+    std::uint64_t SELLQ_Limit = 550;
+	std::uint64_t BUYQ_Limit = 550;
+	std::uint64_t BUYG_MIN = 0;
+	std::uint64_t BUYG_MAX = 9999999;
+};
 class GW2TPAPP
 {
 public:
-    GW2TPAPP(GW2API& api, IdDatabase& idDb, NameDatabase& nameDb, PriceDatabase& priceDb, FavouritesDatabase& favDb);
+    GW2TPAPP(GW2API& api, SortParameters& parameters, IdDatabase& idDb, NameDatabase& nameDb, PriceDatabase& priceDb, FavouritesDatabase& favDb);
     ~GW2TPAPP();
     struct Printer
     {
@@ -40,11 +47,8 @@ private:
     NameDatabase& nameDb;
     PriceDatabase& priceDb;
     FavouritesDatabase& favDb;
+    SortParameters& sortParameters;
 
-	std::uint64_t SELLQ_Limit = 550;
-	std::uint64_t BUYQ_Limit = 550;
-	std::uint64_t BUYG_MIN = 0;
-	std::uint64_t BUYG_MAX = 9999999;
     bool shortList = false;
 };
 

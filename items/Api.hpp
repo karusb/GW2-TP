@@ -26,7 +26,6 @@ public:
 
 private:
     std::vector<ItemIdentifier> PullItemNames(const std::vector<std::uint64_t>& items);
-    std::vector<ItemNameExtended> PullItemNames(const std::vector<Item>& items);
     bool PullItemPrices(int itempos);
     bool PullItemPrices(std::vector<Item>&items, std::vector<ItemIdentifier>&identifierList, int itempos);
 

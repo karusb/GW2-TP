@@ -2,12 +2,13 @@
 #include <algorithm>
 #include "termcolor/termcolor.hpp"
 
-GW2TPAPP::GW2TPAPP(GW2API& api, IdDatabase& idDb, NameDatabase& nameDb, PriceDatabase& priceDb, FavouritesDatabase& favDb)
+GW2TPAPP::GW2TPAPP(GW2API& api, SortParameters& parameters, IdDatabase& idDb, NameDatabase& nameDb, PriceDatabase& priceDb, FavouritesDatabase& favDb)
     : api(api)
     , idDb(idDb)
     , nameDb(nameDb)
     , priceDb(priceDb)
     , favDb(favDb)
+    , sortParameters(parameters)
 {}
 
 GW2TPAPP::~GW2TPAPP()
@@ -38,20 +39,15 @@ void GW2TPAPP::Printer::PrintItem(int number, const Item& item, std::string_view
 	std::cout << "[ " << number << " ] ";
     EncodeRarity(rarity);
     std::cout << name  << termcolor::reset << std::endl
-            << termcolor::bright_green << " Profit : " << item.profit << termcolor::reset
-            << termcolor::bright_red << " Fees before profit : " << item.fees << termcolor::reset << std::endl;
+            << termcolor::bright_red << " Fees before profit : " << item.fees << termcolor::reset 
+            << termcolor::bright_green << " Profit : " << item.profit << termcolor::reset 
+            << std::endl;
 
     if (!shortList)
     {
 	    std::cout << " Buy Quantity : " << item.buyquantity() << " Buy Price : " << item.buyprice() << std::endl 
             << " Sell Quantity : " << item.sellquantity() << " Sell Price : " << item.sellprice() << std::endl << std::endl;
     }
-            // << " BUY: Quantity  Price   |  SELL: Quantity  Price" << termcolor::reset << std::endl
-            // << termcolor::green << "       " << item.buyquantity() << "    " << item.buyprice() << termcolor::reset << "         "
-            // << termcolor::red << "       " <<  item.sellquantity() << "    " << item.sellprice() << termcolor::reset << std::endl;
-
-			// << " Buy Quantity : " << item.buyquantity() << " Sell Quantity : " << item.sellquantity() << std::endl
-			// << " Buy Price : " << item.buyprice() << " Sell Price : " << item.sellprice() << std::endl << std::endl;
 }
 
 void GW2TPAPP::Printer::PrintItemWithFetch(int number, const Item& item, GW2API& api, bool shortList)
@@ -75,15 +71,15 @@ void GW2TPAPP::UserInitialize()
 
 	if (!idDb.Load())
 	{
-		std::cout << "Item list cannot be found, rebuilding..." << std::endl;
+		std::cout << termcolor::bright_red << "Item list cannot be found, rebuilding..."  << termcolor::reset << std::endl;
 		RebuildItemsList();
 	}
 
-	std::cout << "Currently " << idDb.Get().size() << " items can be sold or bought from TP" << std::endl;
+	std::cout << termcolor::yellow << "Currently " << idDb.Get().size() << " items can be sold or bought from TP" << termcolor::reset << std::endl;
 
 	if (!priceDb.Load())
 	{
-		std::cout << "Item Price Database was not found! Rebuilding database, this may take a while..." << std::endl;
+		std::cout << termcolor::bright_red << "Item Price Database was not found! Rebuilding database, this may take a while..." << termcolor::reset << std::endl;
 		RebuildItemPriceDatabase();
 	}
 	else 
@@ -102,16 +98,18 @@ void GW2TPAPP::DatabaseMenuPrint()
 {
 	std::string offlineNotice;
 	auto point = nameDb.Load();
+    std::cout << termcolor::red;
 	if (point == 0)
 		offlineNotice = "(Not Built)";
 	else
 	{
+        std::cout << termcolor::green;
 		offlineNotice = "(Availabe)";
 		std::cout << "Last Offline Update " << std::put_time(std::localtime(&point), "%F %T.\n") << std::flush;
 	}
 	auto dbTime = std::chrono::system_clock::to_time_t(priceDb.UpdateTime());
-	std::cout << "Last Price Update " << std::put_time(std::localtime(&dbTime), "%F %T.\n") << std::flush;
-	std::cout << "DATABASE: [1] OFFLINE" << offlineNotice << " [2] REBUILD PRICES [3] REBUILD ALL [r] RETURN" << std::endl;
+	std::cout << termcolor::green << "Last Price Update " << std::put_time(std::localtime(&dbTime), "%F %T.\n") << termcolor::reset << std::flush;
+	std::cout << termcolor::bright_blue << "DATABASE: [1] OFFLINE" << offlineNotice << " [2] REBUILD PRICES [3] REBUILD ALL [r] RETURN"  << termcolor::reset << std::endl;
 
 }
 
@@ -134,20 +132,20 @@ void GW2TPAPP::DatabaseMenu()
 			idDb.Erase();
 			priceDb.Erase();
 
-			std::cout << "Downloading tradable item list... " << std::endl;
+			std::cout << "Downloading tradable item list... " << termcolor::reset << std::endl;
 			RebuildItemsList();
 			
-			std::cout << "Downloading item prices, this may take a while... " << std::endl;
+			std::cout << termcolor::yellow << "Downloading item prices, this may take a while... " << termcolor::reset << std::endl;
 			RebuildItemPriceDatabase();
 		}
 		else if (input == "3")
 		{
 			EraseAllDatabases();
-			std::cout << "Rebuilding all databases, this may take a while depending on API availability" << std::endl;
-			std::cout << "Downloading tradable item list... " << std::endl;
+			std::cout << termcolor::yellow << "Rebuilding all databases, this may take a while depending on API availability" << termcolor::reset << std::endl;
+			std::cout << "Downloading tradable item list... " << termcolor::reset << std::endl;
 			RebuildItemsList();
 			RebuildExtendedItemsList();
-			std::cout << "Downloading item prices, this may take a while... " << std::endl;
+			std::cout << termcolor::yellow << "Downloading item prices, this may take a while... " << termcolor::reset << std::endl;
 			RebuildItemPriceDatabase();
 		}
 
@@ -188,19 +186,19 @@ void GW2TPAPP::RebuildItemPriceDatabase()
 void GW2TPAPP::LimitsMenu()
 {
     std::string input;
-    std::cout << "What would you like to change? [1] Quantity Limits [2] Price Limits";
+    std::cout << termcolor::bright_blue << "What would you like to change? [1] Quantity Limits [2] Price Limits" << termcolor::reset;
     std::cin >> input;
     if (input == "1")
     {
-        std::cout << "Current MIN Limits : BUYING QUANTITY " << BUYQ_Limit << " SELLING QUANTITY " << SELLQ_Limit << std::endl;
-        std::cout << "Input new limits and separate them with space" << std::endl;
-        std::cin >> BUYQ_Limit >> SELLQ_Limit;
+        std::cout << "Current MIN Limits : BUYING QUANTITY " << sortParameters.BUYQ_Limit << " SELLING QUANTITY " << sortParameters.SELLQ_Limit << std::endl;
+        std::cout << termcolor::bright_yellow << "Input new limits and separate them with space" << termcolor::reset << std::endl;
+        std::cin >> sortParameters.BUYQ_Limit >> sortParameters.SELLQ_Limit;
     }
     else if (input == "2")
     {
-        std::cout << "Current Price Limits : MIN PRICE " << BUYG_MIN << " MAX PRICE " << BUYG_MAX << std::endl;
-        std::cout << "Input new limits and separate them with space" << std::endl;
-        std::cin >> BUYG_MIN >> BUYG_MAX;
+        std::cout << "Current Price Limits : MIN PRICE " << sortParameters.BUYG_MIN << " MAX PRICE " << sortParameters.BUYG_MAX << std::endl;
+        std::cout << termcolor::bright_yellow << "Input new limits and separate them with space" << termcolor::reset << std::endl;
+        std::cin >> sortParameters.BUYG_MIN >> sortParameters.BUYG_MAX;
     }
 }
 
@@ -211,17 +209,17 @@ void GW2TPAPP::LiveListMenu()
     std::cin >> input;
     int parsesize = stoi(input);
 
-    auto sortedItems = PriceDatabase::Sorter::SortProfitableItems(priceDb, BUYQ_Limit, SELLQ_Limit, BUYG_MAX, BUYG_MIN);
+    auto sortedItems = PriceDatabase::Sorter::SortProfitableItems(priceDb, sortParameters.BUYQ_Limit, sortParameters.SELLQ_Limit, sortParameters.BUYG_MAX, sortParameters.BUYG_MIN);
 
     std::vector<ItemNameExtended> extendedItems;
-    std::cout << "Loading item names...";
+    std::cout << termcolor::yellow << "Loading item names..." << termcolor::reset;
     api.PreloadItemNames(sortedItems, extendedItems, parsesize);
-    std::cout << "Done" << std::endl;
+    std::cout << termcolor::bright_green << "Done" << termcolor::reset << std::endl;
 
     for (int i = 0; i < parsesize && i < extendedItems.size(); i++)
         Printer::PrintExtendedItem(i, extendedItems[i], shortList);
 
-    std::cout << " TYPE u to UPDATE FETCHED LIST or any key to continue" << std::endl;
+    std::cout << termcolor::yellow << " TYPE u to UPDATE FETCHED LIST or any key to continue"  << termcolor::reset << std::endl;
     std::cin >> input;
     if (input == "u" || input == "U")
     {
@@ -235,7 +233,7 @@ void GW2TPAPP::LiveListMenu()
             for (int i = 0; i < parsesize && i < extendedItems.size(); i++)
                 Printer::PrintExtendedItem(i, extendedItems[i], shortList);
 
-            std::cout << "Press any key then enter to continue or type esc to stop" << std::endl;
+            std::cout << termcolor::yellow << "Press any key then enter to continue or type esc to stop"  << termcolor::reset << std::endl;
             std::cin >> input;
         }
     }
@@ -248,7 +246,7 @@ void GW2TPAPP::OfflineListMenu()
     std::cin >> input;
     int parsesize = std::stoi(input);
 
-    auto sortedItems = PriceDatabase::Sorter::SortProfitableItems(priceDb, BUYQ_Limit, SELLQ_Limit, BUYG_MAX, BUYG_MIN);
+    auto sortedItems = PriceDatabase::Sorter::SortProfitableItems(priceDb, sortParameters.BUYQ_Limit, sortParameters.SELLQ_Limit, sortParameters.BUYG_MAX, sortParameters.BUYG_MIN);
 
     for (int i = 0; i < parsesize && i < sortedItems.size(); i++)
     {	
@@ -273,21 +271,21 @@ void GW2TPAPP::LiveFavouritesMenu()
             for (int i = 0; i < favDb.Get().size(); i++)
                 Printer::PrintItemWithFetch(i, userFavourites[i], api, shortList);
 
-            std::cout << "Press any key then enter to continue or type q to stop" << std::endl;
+            std::cout << termcolor::yellow << "Press any key then enter to continue or type q to stop" << termcolor::reset << std::endl;
             std::cin >> input;
         }
     }
     else
-        std::cout << " Select favourites first!" << std::endl;
+        std::cout << termcolor::bright_red << " Select favourites first!" << termcolor::reset << std::endl;
 }
 
 void GW2TPAPP::SelectFavouritesMenu()
 {
     std::string input;
     std::vector<std::uint64_t> choices;
-    std::cout << " ENTER THE ITEM NUMBER(S) SHOWN IN [] FINISH WITH q" << std::endl;
+    std::cout << termcolor::yellow << " ENTER THE ITEM NUMBER(S) SHOWN IN [] FINISH WITH q" << termcolor::reset << std::endl;
 
-    auto sortedItems = PriceDatabase::Sorter::SortProfitableItems(priceDb, BUYQ_Limit, SELLQ_Limit, BUYG_MAX, BUYG_MIN);
+    auto sortedItems = PriceDatabase::Sorter::SortProfitableItems(priceDb, sortParameters.BUYQ_Limit, sortParameters.SELLQ_Limit, sortParameters.BUYG_MAX, sortParameters.BUYG_MIN);
 
     while (input != "q")
     {
@@ -296,16 +294,17 @@ void GW2TPAPP::SelectFavouritesMenu()
             choices.push_back(std::stoi(input));
     }
 
-    std::cout << " You have selected : ";
+    std::cout << termcolor::bright_yellow << " You have selected : " << termcolor::bright_red;
     std::vector<uint64_t> selectedItems;
     for (const auto& choice : choices)
     {
         std::cout << choice << " ";
         selectedItems.push_back(sortedItems[choice].getid());
     }
-    favDb.Write(selectedItems);
+    if (!choices.empty())
+        favDb.Write(selectedItems);
 
-    std::cout << std::endl;
+    std::cout << termcolor::reset << std::endl;
 }
 
 void GW2TPAPP::MainMenu()
@@ -314,7 +313,7 @@ void GW2TPAPP::MainMenu()
 
 	while (input != "q")
 	{
-        std::cout << termcolor::bright_blue 
+        std::cout << termcolor::bright_blue
         <<" [1] LIVE [2] FAVOURITES [3] OFFLINE [4] SELECT FAVOURITES [5] LIMITS [6] DATABASE " << termcolor::reset << std::endl
         << termcolor::magenta << " [s] SHORTEN(" << shortList << ")" << termcolor::reset
         << termcolor::red << " [q] QUIT" << termcolor::reset <<  std::endl;

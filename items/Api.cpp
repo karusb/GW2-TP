@@ -24,7 +24,13 @@ bool GW2API::HttpGet(const std::string& url, std::string& response)
 void GW2API::PreloadItemNames(const std::vector<Item>& source, std::vector<ItemNameExtended>& to, int count)
 {
 	std::vector<Item> trimmedsource = {source.begin(), source.begin() + count};
-	to = PullItemNames(trimmedsource);
+	std::vector<std::uint64_t> ids;
+	for (const auto& item : trimmedsource)
+		ids.push_back(item.getid());
+	auto details = PullItemNames(ids);
+	
+	for (const auto& detail : details)
+		to.push_back({*std::find_if(trimmedsource.begin(), trimmedsource.end(), [&detail](const auto& item){ return detail.id == item.getid(); }), detail});
 }
 
 std::pair<std::string,std::string> GW2API::PullItemDetails(std::uint64_t it)
@@ -42,29 +48,6 @@ ItemNameExtended GW2API::ExtendItem(const Item& item)
 	auto pair = PullItemDetails(item.getid());
 	ItemNameExtended extendedItem(item, pair.first, pair.second);
 	return extendedItem;
-}
-
-std::vector<ItemNameExtended> GW2API::PullItemNames(const std::vector<Item>& items)
-{
-	// USE OTHER PullItemNames function in this, instead of repeating the same thing, in a wrong way
-	std::string fixlink = "https://api.guildwars2.com/v2/items?ids=";
-	for (const auto& item : items)
-	{
-		fixlink.append(std::to_string(item.getid()));
-		fixlink.append(",");
-	}
-	std::string stringresponse = "";
-	HttpGet(fixlink, stringresponse);
-
-	std::vector<ItemNameExtended> extendedItems;
-	std::string previousName = "?";
-	for (auto i = 0; i < items.size(); ++i)
-	{
-		ItemNameExtended extendedItem(items[i], ParseJSON(&stringresponse, "name", previousName), ParseJSON(&stringresponse, "rarity", previousName));
-		previousName = extendedItem.getname();
-		extendedItems.push_back(extendedItem);
-	}
-	return extendedItems;
 }
 
 Item GW2API::PullItemPrice(std::uint64_t it)

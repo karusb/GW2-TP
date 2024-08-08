@@ -131,6 +131,7 @@ public:
 	ItemNameExtended(const Item& item, std::string name, std::string rarity);
 	ItemNameExtended(std::uint64_t ids = 0, std::uint64_t buyprice = 0, std::uint64_t buyquantity = 0, std::uint64_t sellprice = 0 , std::uint64_t sellquantity = 0, const std::string& name="");
 	ItemNameExtended(ItemIdentifier identifier, std::uint64_t buyprice, std::uint64_t buyquantity, std::uint64_t sellprice, std::uint64_t sellquantity);
+	ItemNameExtended(const Item& item, const ItemIdentifier& identifier);
 
 	const std::string_view getname() const;
 	Rarity getrarity() const;
