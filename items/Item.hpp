@@ -88,20 +88,24 @@ struct ItemIdentifier
 	std::uint64_t id;
 	std::string name;
 	Rarity rarity;
+
 	friend bool operator!= (ItemIdentifier const &a, ItemIdentifier const &b)
 	{
 		return !(a.id == b.id && a.name == b.name);
 	}
+
 	friend std::ostream& operator<< (std::ostream& output, const ItemIdentifier &i) 
 	{
 		return (output << i.id <<" " << static_cast<typename std::underlying_type<Rarity>::type>(i.rarity) << " " << i.name);
 	}
+
 	friend std::ostream& operator<< (std::ostream& output, const std::vector<ItemIdentifier> &v) 
 	{
 		for (const auto& i : v)
 			output << i << std::endl;
 		return output;
 	}
+
 	friend std::istream& operator>> (std::istream& input, ItemIdentifier &i)
 	{
 		std::string idt;
@@ -113,6 +117,7 @@ struct ItemIdentifier
 		i.rarity = static_cast<Rarity>(irarity);
 		return std::getline(input, i.name);
 	}
+	
 	friend std::istream& operator>> (std::istream& input, std::vector<ItemIdentifier> &v)
 	{
 		ItemIdentifier item;

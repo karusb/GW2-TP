@@ -51,6 +51,8 @@ add_executable (gw2tp
  "items/Database.hpp"
  "items/JsonHelper.cpp"
  "items/JsonHelper.hpp"
+ "items/Menu.cpp"
+ "items/Menu.hpp"
 )
 
 target_include_directories(gw2tp PRIVATE)

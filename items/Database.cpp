@@ -126,7 +126,7 @@ std::time_t PriceDatabase::itemdbload()
 	std::time_t timeDuration = 0;
 	storage.clear();
 	if (!db.is_open())
-		std::cout << "itemdb file not open bob";
+		std::cout << "Price Database file cannot be opened";
 	else
 	{
 		db >> timeDuration;
@@ -137,13 +137,13 @@ std::time_t PriceDatabase::itemdbload()
 	return timeDuration;
 }
 
-bool PriceDatabase::Load()
+std::time_t PriceDatabase::Load()
 {
 	if (Exists())
 		dbTimePoint = std::chrono::system_clock::from_time_t(itemdbload());
 	else
-		return false;
-	return true;
+		return 0;
+	return std::chrono::system_clock::to_time_t(dbTimePoint);
 }
 
 void PriceDatabase::WriteBack()
@@ -154,16 +154,13 @@ void PriceDatabase::WriteBack()
 	db << storage;
 	db.close();
 }
-std::vector<Item> PriceDatabase::Sorter::SortProfitableItems(PriceDatabase& db, std::uint64_t BUYQ_Limit, std::uint64_t SELLQ_Limit, std::uint64_t BUYG_MAX, std::uint64_t BUYG_MIN)
-{
-	std::vector<Item> favitems;
-	
-	for (const auto& item : db.Get())
-		if (item.buyquantity() >= BUYQ_Limit && item.sellquantity() >= SELLQ_Limit && item.buyprice() <= BUYG_MAX && item.buyprice() >= BUYG_MIN)
-			favitems.push_back(item);
 
-	std::sort(favitems.begin(), favitems.end());
-	return favitems;
+Item PriceDatabase::ItemFromDB(std::uint64_t id)
+{
+	for (const auto& item : storage)
+		if (item.getid() == id)
+			return item;
+	return {};
 }
 
 FavouritesDatabase::FavouritesDatabase(std::string filename)
@@ -183,6 +180,25 @@ bool FavouritesDatabase::Write(const std::vector<std::uint64_t>& items)
 	return true;
 }
 
+bool FavouritesDatabase::Append(const std::vector<std::uint64_t> &items)
+{
+    storage.reserve(storage.size() + items.size());
+	storage.insert(storage.end(), items.begin(), items.end());
+	return Write(storage);
+}
+
+bool FavouritesDatabase::Delete(const std::vector<std::uint64_t> &items)
+{
+	for (auto& item : items)
+	{
+		auto foundItem = std::find_if(storage.begin(), storage.end(), [&item](auto &storageItem){ return  item == storageItem;});
+		if (foundItem != storage.end())
+			storage.erase(foundItem);
+	}
+	
+    return Write(storage);
+}
+
 bool FavouritesDatabase::Load()
 {
 	std::fstream db(filename, std::ios_base::in);
@@ -198,4 +214,45 @@ bool FavouritesDatabase::Load()
 		db >> string;
 	}
 	return true;
+}
+
+std::vector<Item> Sorter::SortProfitableItems(PriceDatabase& db, std::uint64_t BUYQ_Limit, std::uint64_t SELLQ_Limit, std::uint64_t BUYG_MAX, std::uint64_t BUYG_MIN)
+{
+	std::vector<Item> favitems;
+	
+	for (const auto& item : db.Get())
+		if (item.buyquantity() >= BUYQ_Limit && item.sellquantity() >= SELLQ_Limit && item.buyprice() <= BUYG_MAX && item.buyprice() >= BUYG_MIN)
+			favitems.push_back(item);
+
+	std::sort(favitems.begin(), favitems.end());
+	return favitems;
+}
+
+std::vector<ItemNameExtended> Search::NameContains(const std::vector<ItemNameExtended>& items, std::string name)
+{
+	std::vector<ItemNameExtended> containingItems;
+	auto marker = items.begin();
+	auto it = std::find_if(marker, items.end(), [&name](auto& item)
+	{
+		std::string itemName { item.getname() };
+		std::string searchName = name;
+		std::transform(itemName.begin(), itemName.end(), itemName.begin(),[](auto c){ return std::tolower(c); });
+		std::transform(searchName.begin(), searchName.end(), searchName.begin(),[](auto c){ return std::tolower(c); });
+		return itemName.find(searchName) != std::string::npos;
+	});
+	while (it != items.end())
+	{
+		containingItems.push_back(*it);
+		marker = it;
+		it = std::find_if(marker + 1, items.end(), [&name](auto& item)
+		{
+			std::string itemName { item.getname() };
+			std::string searchName = name;
+			std::transform(itemName.begin(), itemName.end(), itemName.begin(),[](auto c){ return std::tolower(c); });
+			std::transform(searchName.begin(), searchName.end(), searchName.begin(),[](auto c){ return std::tolower(c); });
+			return itemName.find(searchName) != std::string::npos;
+		});
+	}
+
+	return containingItems;
 }

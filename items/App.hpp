@@ -12,6 +12,7 @@ struct SortParameters
 	std::uint64_t BUYG_MIN = 0;
 	std::uint64_t BUYG_MAX = 9999999;
 };
+
 class GW2TPAPP
 {
 public:
@@ -34,9 +35,17 @@ private:
     void DatabaseMenu();
     void LimitsMenu();
     void LiveListMenu();
+    void SearchMenu();
     void OfflineListMenu();
+    void FavouritesMenu();
     void LiveFavouritesMenu();
     void SelectFavouritesMenu();
+    void SelectFavouritesFromName();
+    void SelectFavouritesFromList();
+    std::vector<std::uint64_t> GetChoices();
+    int GetSizeChoice();
+    std::vector<ItemNameExtended> SearchItems();
+    void RemoveFavourites();
     void DbIntegrityNotify();
     void RebuildItemsList();
     void RebuildExtendedItemsList();

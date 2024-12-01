@@ -39,6 +39,7 @@ public:
 
     void Erase()
     {
+        storage.clear();
         std::remove(filename.c_str());
     }
 
@@ -94,14 +95,11 @@ class PriceDatabase
     : public Database<Item>
 {
 public:
-    struct Sorter
-    {
-        static std::vector<Item> SortProfitableItems(PriceDatabase& db, std::uint64_t BUYQ_Limit, std::uint64_t SELLQ_Limit, std::uint64_t BUYG_MAX, std::uint64_t BUYG_MIN);
-    };
     explicit PriceDatabase(std::string filename);
 
-    bool Load();
+    std::time_t Load();
     void WriteBack();
+    Item ItemFromDB(std::uint64_t id);
 
 private:
     std::time_t itemdbload();
@@ -114,7 +112,19 @@ public:
     explicit FavouritesDatabase(std::string filename);
 
     bool Write(const std::vector<std::uint64_t>& items);
+    bool Append(const std::vector<std::uint64_t>& items);
+    bool Delete(const std::vector<std::uint64_t>& items);
     bool Load();
+};
+
+struct Sorter
+{
+    static std::vector<Item> SortProfitableItems(PriceDatabase& db, std::uint64_t BUYQ_Limit, std::uint64_t SELLQ_Limit, std::uint64_t BUYG_MAX, std::uint64_t BUYG_MIN);
+};
+
+struct Search
+{
+    static std::vector<ItemNameExtended> NameContains(const std::vector<ItemNameExtended>& items, std::string name);
 };
 
 #endif

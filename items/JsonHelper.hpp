@@ -16,7 +16,7 @@ std::string ParseJSON(std::string *inputfile, std::string tobefound, std::string
 @example return = int 11
 
 */
-int getstringinputsizeJSON(std::string *inputfile, std::string tobefound, std::string tobefoundwithin = "?", std::string tobefoundwithinfirst = "?");
+size_t getstringinputsizeJSON(std::string *inputfile, std::string tobefound, std::string tobefoundwithin = "?", std::string tobefoundwithinfirst = "?");
 /* int getstringinputsizeJSON (string inputfile, string tobefound)
 @Description  Counts the data size of the variable given in the config file
 @libDependencies - string.h
@@ -31,7 +31,7 @@ int getstringinputsizeJSON(std::string *inputfile, std::string tobefound, std::s
 @example return = int 11
 
 */
-int getstringinputpositionJSON(std::string *inputfile, std::string tobefound, std::string tobefoundwithin = "?", std::string tobefoundwithinfirst = "?");
+size_t getstringinputpositionJSON(std::string *inputfile, std::string tobefound, std::string tobefoundwithin = "?", std::string tobefoundwithinfirst = "?");
 
 bool IsMarkedForRemoval(char c);
 

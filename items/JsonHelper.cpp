@@ -3,7 +3,7 @@
 //****************************************************
 std::string ParseJSON(std::string *inputfile, std::string tobefound, std::string tobefoundwithin, std::string tobefoundwithinfirst)
 {
-	int size, pos;
+	size_t size, pos;
 	std::stringstream parsedstringstream;
 	std::string parsedstring;
 
@@ -31,10 +31,10 @@ std::string ParseJSON(std::string *inputfile, std::string tobefound, std::string
 @example return = int 11
 
 */
-int getstringinputsizeJSON(std::string *inputfile, std::string tobefound, std::string tobefoundwithin, std::string tobefoundwithinfirst)
+size_t getstringinputsizeJSON(std::string *inputfile, std::string tobefound, std::string tobefoundwithin, std::string tobefoundwithinfirst)
 {
 	size_t strpos = 0;
-	int size = 0;
+	size_t size = 0;
 	size_t eolpos, eolpos2;
 	size_t datastartpos;
 
@@ -49,7 +49,7 @@ int getstringinputsizeJSON(std::string *inputfile, std::string tobefound, std::s
 	eolpos = inputfile->find(",", datastartpos);
 	eolpos2 = inputfile->find("\n", datastartpos);
 	bool eol = false;
-	for (int i = datastartpos + 2; i < inputfile->size() && !eol; i++)
+	for (auto i = datastartpos + 2; i < inputfile->size() && !eol; i++)
 	{
 
 		// cout << i;
@@ -77,10 +77,10 @@ int getstringinputsizeJSON(std::string *inputfile, std::string tobefound, std::s
 @example return = int 11
 
 */
-int getstringinputpositionJSON(std::string *inputfile, std::string tobefound, std::string tobefoundwithin, std::string tobefoundwithinfirst)
+size_t getstringinputpositionJSON(std::string *inputfile, std::string tobefound, std::string tobefoundwithin, std::string tobefoundwithinfirst)
 {
 	size_t strpos = 0;
-	int size = 0;
+	size_t size = 0;
 	size_t eolpos, datastartpos;
 	if (tobefoundwithin != "?")
 		strpos = inputfile->find(tobefoundwithin);

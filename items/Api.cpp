@@ -65,7 +65,7 @@ Item GW2API::PullItemPrice(std::uint64_t it)
 	Item brokenitem;
 	if (id == "nan")
 		return brokenitem;
-	std::cout << std::endl;
+	std::cout << '.' << std::flush;
 	buy_quantity = ParseJSON(&stringresponse, "quantity", "buys");
 	buy_price = ParseJSON(&stringresponse, "unit_price", "buys");
 	sell_quantity = ParseJSON(&stringresponse, "quantity", "sells");
