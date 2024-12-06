@@ -10,7 +10,22 @@ GW2TPAPP::GW2TPAPP(GW2API& api, SortParameters& parameters, IdDatabase& idDb, Na
     , priceDb(priceDb)
     , favDb(favDb)
     , sortParameters(parameters)
-{}
+{
+    // Standard font
+    std::cout << termcolor::bright_green << R"(
+  ____           __        __             
+ | __ )  __ _ ___\ \      / /_ _ _ __ ___ 
+ |  _ \ / _` |_  /\ \ /\ / / _` | '__/ _ \
+ | |_) | (_| |/ /  \ V  V / (_| | | |  __/
+ |____/ \__,_/___|  \_/\_/ \__,_|_|  \___|
+   ______        ______     _____ ____    
+  / ___\ \      / /___ \   |_   _|  _ \   
+ | |  _ \ \ /\ / /  __) |____| | | |_) |  
+ | |_| | \ V  V /  / __/_____| | |  __/   
+  \____|  \_/\_/  |_____|    |_| |_|      
+                                          )"
+    << std::endl << termcolor::reset;
+}
 
 GW2TPAPP::~GW2TPAPP()
 {
@@ -184,7 +199,7 @@ void GW2TPAPP::LimitsMenu()
     Menu menu("LIMITS");
     menu.Add("1", "Quantity Limits", [this](auto)
         {
-            std::cout << "Current MIN Limits :" << termcolor::bright_green << " BUYING QUANTITY " << sortParameters.BUYQ_Limit << termcolor::bright_red << " SELLING QUANTITY " << sortParameters.SELLQ_Limit << termcolor::reset << std::endl;
+            std::cout << termcolor::bright_yellow << "Current MIN Limits :" << std::endl << termcolor::bright_white << " BUYING QUANTITY " << termcolor::bright_green << sortParameters.BUYQ_Limit << termcolor::bright_white << " SELLING QUANTITY "  << termcolor::bright_red << sortParameters.SELLQ_Limit << termcolor::reset << std::endl;
             
             Menu menu; 
             menu.Add("c", "CHANGE", [this](auto)
@@ -198,7 +213,7 @@ void GW2TPAPP::LimitsMenu()
         })
         .Add("2", "Price Limits", [this](auto)
         {
-            std::cout << termcolor::bright_red << "Current BUY Price Limits :" << termcolor::bright_red << " MIN PRICE " << sortParameters.BUYG_MIN << termcolor::bright_green << " MAX PRICE " << sortParameters.BUYG_MAX << termcolor::reset << std::endl;
+            std::cout << termcolor::bright_yellow << "Current BUY Price Limits :" << termcolor::bright_white << std::endl << " MIN PRICE " << termcolor::bright_red << sortParameters.BUYG_MIN << termcolor::bright_white << " MAX PRICE "  << termcolor::bright_green << sortParameters.BUYG_MAX << termcolor::reset << std::endl;
             
             Menu menu; 
             menu.Add("c", "CHANGE", [this](auto)
@@ -232,7 +247,7 @@ void GW2TPAPP::LiveListMenu()
     menu.AddContinous("u", "UPDATE", [this, &extendedItems, &parsesize](auto)
         {
             for (int i = 0; i < parsesize; i++)
-                extendedItems[i] = extendedItems[i], api.PullItemPrice(extendedItems[i].getid());
+                extendedItems[i] = {extendedItems[i], api.PullItemPrice(extendedItems[i].getid())};
             std::cout << std::endl;
             std::sort(extendedItems.begin(), extendedItems.end());
 
@@ -255,7 +270,7 @@ void GW2TPAPP::SearchMenu()
     menu.AddContinous("u", "UPDATE", [this, &foundItems](auto)
         {
             for (int i = 0; i < foundItems.size(); i++)
-                foundItems[i] = foundItems[i], api.PullItemPrice(foundItems[i].getid());
+                foundItems[i] = {foundItems[i], api.PullItemPrice(foundItems[i].getid())};
             std::cout << std::endl;
             std::sort(foundItems.begin(), foundItems.end());
 

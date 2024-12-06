@@ -54,6 +54,15 @@ ItemNameExtended::ItemNameExtended(const Item& item, const ItemIdentifier& ident
 	, rarity(identifier.rarity)
 {}
 
+ItemNameExtended::ItemNameExtended(const ItemNameExtended &itemNameExtended, const Item &item)
+{
+	// This constructor updates *this if item is not an empty item
+	if (item != Item())
+		*this = ItemNameExtended(item, {itemNameExtended.id, itemNameExtended.name, itemNameExtended.rarity});
+	else
+		*this = itemNameExtended;
+}
+
 const std::string_view ItemNameExtended::getname() const
 {
 	return name;

@@ -55,16 +55,17 @@ Item GW2API::PullItemPrice(std::uint64_t it)
 	std::string fixlink = "https://api.guildwars2.com/v2/commerce/prices/";
 	std::string requestitemid = std::to_string(it);
 	std::string id, buy_quantity, sell_quantity, buy_price, sell_price;
-
+	Item brokenItem;
 	fixlink.append(requestitemid);
 
 	std::string stringresponse = "";
-	HttpGet(fixlink, stringresponse);
+	if (!HttpGet(fixlink, stringresponse))
+		return brokenItem;
 
 	id = ParseJSON(&stringresponse, "id");
-	Item brokenitem;
+	
 	if (id == "nan")
-		return brokenitem;
+		return brokenItem;
 	std::cout << '.' << std::flush;
 	buy_quantity = ParseJSON(&stringresponse, "quantity", "buys");
 	buy_price = ParseJSON(&stringresponse, "unit_price", "buys");
