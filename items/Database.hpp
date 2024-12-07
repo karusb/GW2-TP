@@ -119,7 +119,7 @@ public:
 
 struct Sorter
 {
-    static std::vector<Item> SortProfitableItems(PriceDatabase& db, std::uint64_t BUYQ_Limit, std::uint64_t SELLQ_Limit, std::uint64_t BUYG_MAX, std::uint64_t BUYG_MIN);
+    static std::vector<Item> SortProfitableItems(PriceDatabase& db, std::uint64_t BUYQ_Limit, std::uint64_t SELLQ_Limit, std::uint64_t BUYG_MAX, std::uint64_t BUYG_MIN, std::uint64_t QDIFF_MAX);
 };
 
 struct Search

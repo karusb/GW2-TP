@@ -216,12 +216,12 @@ bool FavouritesDatabase::Load()
 	return true;
 }
 
-std::vector<Item> Sorter::SortProfitableItems(PriceDatabase& db, std::uint64_t BUYQ_Limit, std::uint64_t SELLQ_Limit, std::uint64_t BUYG_MAX, std::uint64_t BUYG_MIN)
+std::vector<Item> Sorter::SortProfitableItems(PriceDatabase& db, std::uint64_t BUYQ_Limit, std::uint64_t SELLQ_Limit, std::uint64_t BUYG_MAX, std::uint64_t BUYG_MIN, std::uint64_t QDIFF_MAX)
 {
 	std::vector<Item> favitems;
 	
 	for (const auto& item : db.Get())
-		if (item.buyquantity() >= BUYQ_Limit && item.sellquantity() >= SELLQ_Limit && item.buyprice() <= BUYG_MAX && item.buyprice() >= BUYG_MIN)
+		if (item.buyquantity() >= BUYQ_Limit && item.sellquantity() >= SELLQ_Limit && item.buyprice() <= BUYG_MAX && item.buyprice() >= BUYG_MIN && std::abs(item.buyquantity() - item.sellquantity() <= QDIFF_MAX))
 			favitems.push_back(item);
 
 	std::sort(favitems.begin(), favitems.end());

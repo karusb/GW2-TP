@@ -11,6 +11,7 @@ struct SortParameters
 	std::uint64_t BUYQ_Limit = 550;
 	std::uint64_t BUYG_MIN = 0;
 	std::uint64_t BUYG_MAX = 9999999;
+	std::uint64_t QDIFF_MAX = 550;
 };
 
 class GW2TPAPP

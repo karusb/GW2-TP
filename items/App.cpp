@@ -1,5 +1,6 @@
 #include "App.hpp"
 #include <algorithm>
+#include <limits>
 #include "termcolor/termcolor.hpp"
 #include "Menu.hpp"
 
@@ -197,9 +198,10 @@ void GW2TPAPP::DatabaseMenu()
 void GW2TPAPP::LimitsMenu()
 {
     Menu menu("LIMITS");
-    menu.Add("1", "Quantity Limits", [this](auto)
+    menu.Add("1", "QUANTITY LIMITS", [this](auto)
         {
-            std::cout << termcolor::bright_yellow << "Current MIN Limits :" << std::endl << termcolor::bright_white << " BUYING QUANTITY " << termcolor::bright_green << sortParameters.BUYQ_Limit << termcolor::bright_white << " SELLING QUANTITY "  << termcolor::bright_red << sortParameters.SELLQ_Limit << termcolor::reset << std::endl;
+            std::cout << termcolor::bright_yellow << "Current MIN Limits :" << termcolor::bright_white << std::endl 
+             << " BUYING QUANTITY " << termcolor::bright_green << sortParameters.BUYQ_Limit << termcolor::bright_white << " SELLING QUANTITY "  << termcolor::bright_red << sortParameters.SELLQ_Limit << termcolor::reset << std::endl;
             
             Menu menu; 
             menu.Add("c", "CHANGE", [this](auto)
@@ -207,19 +209,61 @@ void GW2TPAPP::LimitsMenu()
                 std::cout << termcolor::bright_yellow << "Input new quantity limits and separate them with space" << termcolor::reset << std::endl;
                 std::cin >> sortParameters.BUYQ_Limit >> sortParameters.SELLQ_Limit;
             })
+            .Add("d", "DEFAULTS", [this](auto)
+            {
+                std::cout << termcolor::bright_yellow << "New price limits set to default" << termcolor::reset << std::endl;
+                auto defaultParameters = SortParameters();
+                sortParameters.BUYQ_Limit = defaultParameters.BUYQ_Limit;
+                sortParameters.SELLQ_Limit = defaultParameters.SELLQ_Limit;
+            })
             .PrintOptions()
             .Run();
 
         })
-        .Add("2", "Price Limits", [this](auto)
+        .Add("2", "PRICE LIMITS", [this](auto)
         {
-            std::cout << termcolor::bright_yellow << "Current BUY Price Limits :" << termcolor::bright_white << std::endl << " MIN PRICE " << termcolor::bright_red << sortParameters.BUYG_MIN << termcolor::bright_white << " MAX PRICE "  << termcolor::bright_green << sortParameters.BUYG_MAX << termcolor::reset << std::endl;
+            std::cout << termcolor::bright_yellow << "Current BUY Price Limits :" << termcolor::bright_white << std::endl
+            << " MIN PRICE " << termcolor::bright_red << sortParameters.BUYG_MIN << termcolor::bright_white << " MAX PRICE "  << termcolor::bright_green << sortParameters.BUYG_MAX << termcolor::reset << std::endl;
             
             Menu menu; 
             menu.Add("c", "CHANGE", [this](auto)
             {
                 std::cout << termcolor::bright_yellow << "Input new price limits and separate them with space" << termcolor::reset << std::endl;
                 std::cin >> sortParameters.BUYG_MIN >> sortParameters.BUYG_MAX;
+            })
+            .Add("d", "DEFAULTS", [this](auto)
+            {
+                std::cout << termcolor::bright_yellow << "New price limits set to default" << termcolor::reset << std::endl;
+                auto defaultParameters = SortParameters();
+                sortParameters.BUYG_MIN = defaultParameters.BUYG_MIN;
+                sortParameters.BUYG_MAX = defaultParameters.BUYG_MAX;
+            })
+            .PrintOptions()
+            .Run();
+
+        })
+        .Add("3", "QUANTITY DIFFERENCE", [this](auto)
+        {
+            std::cout << "Filters out items where the absolute difference of their buy quantity and sell quantity exceeds the quantity difference value" << std::endl;
+            std::cout << termcolor::bright_yellow << "Current Quantity Difference :" << termcolor::bright_white << std::endl
+            << " Maximum Quantity Difference " << termcolor::bright_green << sortParameters.QDIFF_MAX << termcolor::reset << std::endl;
+            
+            Menu menu; 
+            menu.Add("c", "CHANGE", [this](auto)
+            {
+                std::cout << termcolor::bright_yellow << "Input new quantity limit" << termcolor::reset << std::endl;
+                std::cin >> sortParameters.QDIFF_MAX;
+            })
+            .Add("max", "MAX", [this](auto)
+            {
+                std::cout << termcolor::bright_yellow << "Maxed quantity difference" << termcolor::reset << std::endl;
+                sortParameters.QDIFF_MAX = 9999999;
+            })
+            .Add("d", "DEFAULT", [this](auto)
+            {
+                std::cout << termcolor::bright_yellow << "New quantity difference limit set to default" << termcolor::reset << std::endl;
+                auto defaultParameters = SortParameters();
+                sortParameters.QDIFF_MAX = defaultParameters.QDIFF_MAX;
             })
             .PrintOptions()
             .Run();
@@ -232,7 +276,7 @@ void GW2TPAPP::LimitsMenu()
 void GW2TPAPP::LiveListMenu()
 {
     int parsesize = GetSizeChoice();
-    auto sortedItems = Sorter::SortProfitableItems(priceDb, sortParameters.BUYQ_Limit, sortParameters.SELLQ_Limit, sortParameters.BUYG_MAX, sortParameters.BUYG_MIN);
+    auto sortedItems = Sorter::SortProfitableItems(priceDb, sortParameters.BUYQ_Limit, sortParameters.SELLQ_Limit, sortParameters.BUYG_MAX, sortParameters.BUYG_MIN, sortParameters.QDIFF_MAX);
 
     std::vector<ItemNameExtended> extendedItems;
     std::cout << termcolor::yellow << "Loading item names..." << termcolor::reset;
@@ -287,7 +331,7 @@ void GW2TPAPP::OfflineListMenu()
     if (nameDb.Exists())
     {
         int parsesize = GetSizeChoice();
-        auto sortedItems = Sorter::SortProfitableItems(priceDb, sortParameters.BUYQ_Limit, sortParameters.SELLQ_Limit, sortParameters.BUYG_MAX, sortParameters.BUYG_MIN);
+        auto sortedItems = Sorter::SortProfitableItems(priceDb, sortParameters.BUYQ_Limit, sortParameters.SELLQ_Limit, sortParameters.BUYG_MAX, sortParameters.BUYG_MIN, sortParameters.QDIFF_MAX);
 
         for (int i = 0; i < parsesize && i < sortedItems.size(); i++)
             Printer::PrintExtendedItem(i, nameDb.ExtendItemFromDB(sortedItems[i]), shortList);
@@ -368,7 +412,7 @@ void GW2TPAPP::SelectFavouritesFromName()
 void GW2TPAPP::SelectFavouritesFromList()
 {
     favDb.Load();
-    auto sortedItems = Sorter::SortProfitableItems(priceDb, sortParameters.BUYQ_Limit, sortParameters.SELLQ_Limit, sortParameters.BUYG_MAX, sortParameters.BUYG_MIN);
+    auto sortedItems = Sorter::SortProfitableItems(priceDb, sortParameters.BUYQ_Limit, sortParameters.SELLQ_Limit, sortParameters.BUYG_MAX, sortParameters.BUYG_MIN, sortParameters.QDIFF_MAX);
     int parsesize = GetSizeChoice();
     sortedItems = {sortedItems.begin(), sortedItems.begin() + parsesize};
     if (nameDb.Exists())
@@ -452,7 +496,7 @@ std::vector<ItemNameExtended> GW2TPAPP::SearchItems()
         std::cin >> std::ws;
         std::getline(std::cin, input);
 
-        auto sortedItems = Sorter::SortProfitableItems(priceDb, sortParameters.BUYQ_Limit, sortParameters.SELLQ_Limit, sortParameters.BUYG_MAX, sortParameters.BUYG_MIN);
+        auto sortedItems = Sorter::SortProfitableItems(priceDb, sortParameters.BUYQ_Limit, sortParameters.SELLQ_Limit, sortParameters.BUYG_MAX, sortParameters.BUYG_MIN, sortParameters.QDIFF_MAX);
 
         for (auto item : sortedItems)
             extendedItems.push_back(nameDb.ExtendItemFromDB(item));
