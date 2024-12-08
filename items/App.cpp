@@ -36,7 +36,7 @@ GW2TPAPP::~GW2TPAPP()
 void GW2TPAPP::Printer::EncodeRarity(Rarity rarity)
 {
     if (rarity == Rarity::Basic)
-        std::cout << termcolor::grey;
+        std::cout << termcolor::bright_grey;
     else if (rarity == Rarity::Fine)
         std::cout << termcolor::blue;
     else if (rarity == Rarity::Masterwork)
@@ -402,8 +402,11 @@ void GW2TPAPP::SelectFavouritesFromName()
     std::cout << termcolor::bright_yellow << " You have selected : " << termcolor::bright_red;
     for (auto choice : choices)
     {
-        std::cout << choice << " ";
-        selectedItems.push_back(foundItems[choice].getid());
+        if (foundItems.size() > choice)
+        {
+            std::cout << choice << " ";
+            selectedItems.push_back(foundItems[choice].getid());
+        }
     }
     if (!selectedItems.empty())
         favDb.Append(selectedItems);
@@ -432,8 +435,11 @@ void GW2TPAPP::SelectFavouritesFromList()
     std::vector<uint64_t> selectedItems;
     for (const auto& choice : choices)
     {
-        std::cout << choice << " ";
-        selectedItems.push_back(sortedItems[choice].getid());
+        if (sortedItems.size() > choice)
+        {
+            std::cout << choice << " ";
+            selectedItems.push_back(sortedItems[choice].getid());
+        }
     }
     if (!selectedItems.empty())
         favDb.Append(selectedItems);
@@ -495,22 +501,20 @@ std::vector<ItemNameExtended> GW2TPAPP::SearchItems()
 
         std::cin >> std::ws;
         std::getline(std::cin, input);
-
-        auto sortedItems = Sorter::SortProfitableItems(priceDb, sortParameters.BUYQ_Limit, sortParameters.SELLQ_Limit, sortParameters.BUYG_MAX, sortParameters.BUYG_MIN, sortParameters.QDIFF_MAX);
-
-        for (auto item : sortedItems)
+        std::cout << termcolor::bright_green << "Searching... "  << termcolor::reset << std::flush;
+        for (auto item : priceDb.Get())
             extendedItems.push_back(nameDb.ExtendItemFromDB(item));
 
-        std::cout << termcolor::bright_green << "Searching... "  << termcolor::reset;
         auto foundItems = Search::NameContains(extendedItems, input);
 
         std::cout << termcolor::bright_yellow << "Found " << foundItems.size() << " results."  << termcolor::reset << std::endl;
+        std::sort(foundItems.begin(), foundItems.end());
         return foundItems;
     }
 }
 
 void GW2TPAPP::RemoveFavourites()
-{    
+{
     if (favDb.Load())
     {
         std::vector<ItemNameExtended> userFavourites;

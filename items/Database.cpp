@@ -231,27 +231,27 @@ std::vector<Item> Sorter::SortProfitableItems(PriceDatabase& db, std::uint64_t B
 std::vector<ItemNameExtended> Search::NameContains(const std::vector<ItemNameExtended>& items, std::string name)
 {
 	std::vector<ItemNameExtended> containingItems;
-	auto marker = items.begin();
-	auto it = std::find_if(marker, items.end(), [&name](auto& item)
+	std::vector<std::string> words;
+	std::string word;
+	std::stringstream stream(name);
+	while (std::getline(stream, word, ' '))
+		words.push_back(word);
+	auto predicate = [&words](auto& item)
 	{
 		std::string itemName { item.getname() };
-		std::string searchName = name;
+		std::vector<std::string> searchWords = words;
 		std::transform(itemName.begin(), itemName.end(), itemName.begin(),[](auto c){ return std::tolower(c); });
-		std::transform(searchName.begin(), searchName.end(), searchName.begin(),[](auto c){ return std::tolower(c); });
-		return itemName.find(searchName) != std::string::npos;
-	});
+		for (auto& word : searchWords)
+			std::transform(word.begin(), word.end(), word.begin(),[](auto c){ return std::tolower(c); });
+		return std::all_of(searchWords.begin(), searchWords.end(), [&itemName](auto& word){return itemName.find(word) != std::string::npos;});
+	};
+	auto marker = items.begin();
+	auto it = std::find_if(marker, items.end(), predicate);
 	while (it != items.end())
 	{
 		containingItems.push_back(*it);
 		marker = it;
-		it = std::find_if(marker + 1, items.end(), [&name](auto& item)
-		{
-			std::string itemName { item.getname() };
-			std::string searchName = name;
-			std::transform(itemName.begin(), itemName.end(), itemName.begin(),[](auto c){ return std::tolower(c); });
-			std::transform(searchName.begin(), searchName.end(), searchName.begin(),[](auto c){ return std::tolower(c); });
-			return itemName.find(searchName) != std::string::npos;
-		});
+		it = std::find_if(marker + 1, items.end(), predicate);
 	}
 
 	return containingItems;
